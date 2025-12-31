@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/483/483497.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="theme-color" content="#0f172a">
     
     <!-- React & Tailwind -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -23,13 +23,24 @@
             -webkit-tap-highlight-color: transparent; 
             overscroll-behavior-y: none;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f3f4f6;
+            background-color: #f8fafc;
         }
-        ::-webkit-scrollbar { display: none; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
         .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
         .fade-in { animation: fadeIn 0.2s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Modal Animation for Desktop */
+        .scale-in { animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 
@@ -37,19 +48,20 @@
         @media print {
             @page { margin: 1cm; size: A4; }
             body { background: white; -webkit-print-color-adjust: exact; }
-            #root { max-width: none; height: auto; overflow: visible; box-shadow: none; }
-            .no-print, header, .bottom-nav, .fab-button { display: none !important; }
+            #root { max-width: none; height: auto; overflow: visible; box-shadow: none; display: block; }
+            .no-print, header, nav, aside, .fab-button, .sidebar { display: none !important; }
             .print-only { display: block !important; }
             .history-container { padding: 0 !important; overflow: visible !important; height: auto !important; }
-            .history-card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; margin-bottom: 20px; }
+            .history-card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; margin-bottom: 20px; page-break-inside: avoid; }
             table { width: 100%; border-collapse: collapse; font-size: 12px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f3f4f6; }
+            main { margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
         }
         .print-only { display: none; }
     </style>
 </head>
-<body class="antialiased h-screen overflow-hidden selection:bg-indigo-100 selection:text-indigo-700">
+<body class="antialiased h-screen w-screen overflow-hidden text-slate-900 bg-slate-50">
     <div id="root" class="h-full w-full"></div>
 
     <script type="text/babel">
@@ -70,7 +82,8 @@
             Upload: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
             Printer: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
             ChevronDown: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 12 15 18 9"/></svg>,
-            Save: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            X: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         };
 
         const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
@@ -82,13 +95,11 @@
             const [entries, setEntries] = useState([]);
             const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
-            // Load data from LocalStorage on mount
             useEffect(() => {
                 const saved = localStorage.getItem('fuel_tracker_pro_v2');
                 if (saved) { try { setEntries(JSON.parse(saved)); } catch (e) {} }
             }, []);
 
-            // Save data to LocalStorage on change
             useEffect(() => {
                 localStorage.setItem('fuel_tracker_pro_v2', JSON.stringify(entries));
             }, [entries]);
@@ -102,15 +113,13 @@
                 if (window.confirm('Delete this entry?')) setEntries(entries.filter(e => e.id !== id));
             };
 
-            // DATA MANAGEMENT FUNCTIONS
+            // DATA MANAGEMENT
             const backupData = () => {
                 const dataStr = JSON.stringify(entries, null, 2);
                 const blob = new Blob([dataStr], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
-                a.download = `fuel_backup_${new Date().toISOString().slice(0,10)}.json`;
-                a.click();
+                a.href = url; a.download = `fuel_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
             };
 
             const restoreData = (event) => {
@@ -120,13 +129,9 @@
                 reader.onload = (e) => {
                     try {
                         const imported = JSON.parse(e.target.result);
-                        if (Array.isArray(imported)) {
-                            if(confirm(`Found ${imported.length} entries. This will overwrite your current data. Continue?`)) {
-                                setEntries(imported);
-                                alert("Data restored successfully!");
-                            }
-                        } else {
-                            alert("Invalid backup file.");
+                        if (Array.isArray(imported) && confirm(`Found ${imported.length} entries. Overwrite?`)) {
+                            setEntries(imported);
+                            alert("Restored!");
                         }
                     } catch (err) { alert("Error reading file."); }
                 };
@@ -159,9 +164,36 @@
             const currentStats = useMemo(() => calculateStats(currentMonthEntries), [currentMonthEntries]);
 
             return (
-                <div className="h-full flex flex-col bg-gray-50 max-w-lg mx-auto shadow-2xl relative print:max-w-none print:shadow-none print:bg-white">
-                    {/* Header */}
-                    <header className="bg-slate-900 text-white pt-10 pb-6 px-6 rounded-b-[2rem] shadow-xl z-20 shrink-0">
+                <div className="h-full w-full flex flex-col md:flex-row bg-slate-50 text-slate-900 print:bg-white print:block">
+                    
+                    {/* DESKTOP SIDEBAR */}
+                    <aside className="hidden md:flex flex-col w-72 bg-slate-900 text-white p-6 shrink-0 h-full overflow-y-auto no-print">
+                        <div className="mb-10">
+                            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
+                                <div className="p-2 bg-indigo-600 rounded-lg"><Icons.Fuel className="w-6 h-6"/></div>
+                                Fuel Tracker
+                            </h1>
+                            <p className="text-slate-400 text-sm mt-2 ml-1">Ultimate Edition</p>
+                        </div>
+
+                        <nav className="flex-1 space-y-2">
+                            <DesktopNavLink icon={Icons.Home} label="Dashboard" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+                            <DesktopNavLink icon={Icons.History} label="History Log" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
+                            <DesktopNavLink icon={Icons.Chart} label="Statistics" active={activeTab === 'stats'} onClick={() => setActiveTab('stats')} />
+                        </nav>
+
+                        <div className="mt-auto pt-6 border-t border-slate-700">
+                             <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-3">Current Month</p>
+                             <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 mb-4" />
+                             <div className="bg-gradient-to-br from-indigo-600 to-blue-600 rounded-xl p-4 shadow-lg">
+                                <p className="text-indigo-100 text-xs font-medium mb-1">Total Spent</p>
+                                <p className="text-2xl font-bold">{formatCurrency(currentStats.totalCost)}</p>
+                             </div>
+                        </div>
+                    </aside>
+
+                    {/* MOBILE HEADER */}
+                    <header className="md:hidden bg-slate-900 text-white pt-10 pb-6 px-6 rounded-b-[2rem] shadow-xl z-20 shrink-0 no-print">
                         {activeTab === 'home' && (
                             <>
                                 <div className="flex justify-between items-center mb-6">
@@ -188,39 +220,43 @@
                         )}
                     </header>
 
-                    {/* Main Content */}
-                    <div className="flex-1 overflow-hidden relative bg-gray-50 history-container">
-                        {activeTab === 'home' && <Dashboard stats={currentStats} entries={currentMonthEntries} onDelete={deleteEntry} onAdd={() => setShowAdd(true)} />}
+                    {/* MAIN CONTENT AREA */}
+                    <main className="flex-1 h-full overflow-hidden flex flex-col relative print:overflow-visible print:h-auto">
                         
-                        {activeTab === 'history' && 
-                            <HistoryView 
-                                entries={entries} 
-                                onDelete={deleteEntry} 
-                                onBackup={backupData} 
-                                onRestore={restoreData} 
-                            />
-                        }
-                        
-                        {activeTab === 'stats' && <StatsView entries={entries} calculateStats={calculateStats} />}
-                    </div>
+                        {/* Desktop Header Bar */}
+                        <div className="hidden md:flex items-center justify-between p-8 pb-0 shrink-0 no-print">
+                            <h2 className="text-2xl font-bold text-slate-800">
+                                {activeTab === 'home' ? 'Dashboard' : activeTab === 'history' ? 'History Log' : 'Statistics'}
+                            </h2>
+                            <button onClick={() => setShowAdd(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg shadow-md font-medium flex items-center gap-2 transition-all active:scale-95">
+                                <Icons.Plus className="w-5 h-5" /> Add Log
+                            </button>
+                        </div>
 
-                    {/* Navigation */}
-                    <div className="bg-white border-t border-gray-100 px-8 py-2 pb-6 safe-bottom flex justify-between items-center z-30 shrink-0 bottom-nav">
+                        <div className="flex-1 overflow-y-auto p-5 md:p-8 pb-24 md:pb-8 history-container">
+                            {activeTab === 'home' && <Dashboard stats={currentStats} entries={currentMonthEntries} onDelete={deleteEntry} />}
+                            {activeTab === 'history' && <HistoryView entries={entries} onDelete={deleteEntry} onBackup={backupData} onRestore={restoreData} />}
+                            {activeTab === 'stats' && <StatsView entries={entries} calculateStats={calculateStats} />}
+                        </div>
+                    </main>
+
+                    {/* MOBILE BOTTOM NAV */}
+                    <div className="md:hidden bg-white border-t border-gray-100 px-8 py-2 pb-6 safe-bottom flex justify-between items-center z-30 shrink-0 absolute bottom-0 w-full no-print">
                         <NavButton icon={Icons.Home} label="Home" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
                         <div className="relative -top-8">
-                            <button onClick={() => setShowAdd(true)} className="fab-button bg-indigo-600 text-white w-16 h-16 rounded-full shadow-xl shadow-indigo-300 flex items-center justify-center transform active:scale-95 transition-all border-4 border-gray-50">
+                            <button onClick={() => setShowAdd(true)} className="fab-button bg-indigo-600 text-white w-16 h-16 rounded-full shadow-xl shadow-indigo-300 flex items-center justify-center transform active:scale-95 transition-all border-4 border-slate-50">
                                 <Icons.Plus className="w-8 h-8" />
                             </button>
                         </div>
                         <NavButton icon={Icons.History} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
                     </div>
 
-                    {/* Add Entry Modal */}
+                    {/* ADD ENTRY MODAL */}
                     {showAdd && (
                         <AddEntryForm onSave={addEntry} onCancel={() => setShowAdd(false)} allEntries={entries} />
                     )}
 
-                    {/* PDF Print Header */}
+                    {/* PRINT HEADER */}
                     <div className="print-only p-8">
                         <h1 className="text-2xl font-bold mb-2">Fuel Tracker Report</h1>
                         <p className="text-sm text-gray-500 mb-6">Generated on {new Date().toLocaleDateString()}</p>
@@ -229,17 +265,28 @@
             );
         }
 
-        // --- View Components ---
+        // --- SUB COMPONENTS ---
 
         function Dashboard({ stats, entries, onDelete }) {
             return (
-                <div className="h-full overflow-y-auto pb-6 pt-6 px-5 scroll-smooth">
-                    <div className="grid grid-cols-2 gap-4 mb-8">
-                        <StatCard icon={<Icons.Car className="w-6 h-6 text-blue-600" />} title="Car" mileage={stats.car.avgMileage} cost={stats.car.totalCost} color="bg-blue-50 border-blue-100" />
-                        <StatCard icon={<Icons.Bike className="w-6 h-6 text-emerald-600" />} title="Scooty" mileage={stats.scooty.avgMileage} cost={stats.scooty.totalCost} color="bg-emerald-50 border-emerald-100" />
+                <div className="space-y-8">
+                    {/* Responsive Grid for Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <StatCard icon={<Icons.Car className="w-6 h-6 text-blue-600" />} title="Car Costs" mileage={null} cost={stats.car.totalCost} color="bg-blue-50 border-blue-100" />
+                        <StatCard icon={<Icons.Car className="w-6 h-6 text-blue-600" />} title="Car Mileage" mileage={stats.car.avgMileage} cost={null} color="bg-blue-50 border-blue-100" />
+                        <StatCard icon={<Icons.Bike className="w-6 h-6 text-emerald-600" />} title="Scooty Costs" mileage={null} cost={stats.scooty.totalCost} color="bg-emerald-50 border-emerald-100" />
+                        <StatCard icon={<Icons.Bike className="w-6 h-6 text-emerald-600" />} title="Scooty Mileage" mileage={stats.scooty.avgMileage} cost={null} color="bg-emerald-50 border-emerald-100" />
                     </div>
-                    <div className="mb-4 flex items-center justify-between"><h3 className="text-gray-800 font-bold text-lg">Recent Logs</h3></div>
-                    {entries.length === 0 ? <EmptyState /> : <div className="space-y-3 pb-8">{entries.map(e => <LogItem key={e.id} entry={e} onDelete={onDelete} />)}</div>}
+                    
+                    <div>
+                        <div className="mb-4 flex items-center justify-between"><h3 className="text-gray-800 font-bold text-lg">Recent Logs</h3></div>
+                        {entries.length === 0 ? <EmptyState /> : 
+                            // Grid on desktop, list on mobile
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {entries.map(e => <LogItem key={e.id} entry={e} onDelete={onDelete} />)}
+                            </div>
+                        }
+                    </div>
                 </div>
             );
         }
@@ -260,44 +307,22 @@
                 monthEntries.forEach(e => {
                     const litres = (Number(e.cost) / Number(e.pricePerLitre)).toFixed(2);
                     const mileage = (e.distance > 0 && litres > 0) ? (e.distance / litres).toFixed(1) : 0;
-                    csvRows.push([
-                        new Date(e.date).toLocaleDateString(),
-                        e.vehicle,
-                        e.fuelType || 'Petrol',
-                        e.odometer || '-',
-                        e.distance,
-                        e.pricePerLitre,
-                        e.cost,
-                        mileage
-                    ]);
+                    csvRows.push([new Date(e.date).toLocaleDateString(), e.vehicle, e.fuelType || 'Petrol', e.odometer || '-', e.distance, e.pricePerLitre, e.cost, mileage]);
                 });
                 const blob = new Blob([csvRows.map(row => row.join(',')).join('\n')], { type: 'text/csv' });
                 const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `Fuel_Log_${monthKey}.csv`; a.click();
+                const a = document.createElement('a'); a.href = url; a.download = `Fuel_Log_${monthKey}.csv`; a.click();
             };
 
             const printPDF = () => window.print();
 
             return (
-                <div className="h-full overflow-y-auto px-5 py-6 pb-20 history-container">
-                    
-                    {/* Backup & Restore Controls */}
-                    <div className="no-print bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6 flex justify-between items-center">
-                        <div>
-                            <h3 className="font-bold text-indigo-900">Data Management</h3>
-                            <p className="text-xs text-indigo-600">Save your data locally</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={onBackup} className="flex flex-col items-center justify-center w-12 h-12 bg-white rounded-lg shadow-sm border border-indigo-100 text-indigo-600 active:scale-95 transition-transform">
-                                <Icons.Save className="w-5 h-5 mb-1" />
-                                <span className="text-[8px] font-bold uppercase">Backup</span>
-                            </button>
-                            <label className="flex flex-col items-center justify-center w-12 h-12 bg-white rounded-lg shadow-sm border border-indigo-100 text-indigo-600 active:scale-95 transition-transform cursor-pointer">
-                                <Icons.Upload className="w-5 h-5 mb-1" />
-                                <span className="text-[8px] font-bold uppercase">Load</span>
-                                <input type="file" accept=".json" onChange={onRestore} className="hidden" />
-                            </label>
+                <div className="space-y-6">
+                    <div className="no-print bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div><h3 className="font-bold text-indigo-900">Data Management</h3><p className="text-xs text-indigo-600">Save your data locally</p></div>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            <button onClick={onBackup} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm border border-indigo-100 text-indigo-600 font-bold text-xs uppercase hover:bg-indigo-50"><Icons.Save className="w-4 h-4" /> Backup</button>
+                            <label className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm border border-indigo-100 text-indigo-600 font-bold text-xs uppercase hover:bg-indigo-50 cursor-pointer"><Icons.Upload className="w-4 h-4" /> Load <input type="file" accept=".json" onChange={onRestore} className="hidden" /></label>
                         </div>
                     </div>
 
@@ -309,52 +334,24 @@
                                 const dateObj = new Date(month + '-01');
                                 return (
                                     <div key={month} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden history-card">
-                                        <div className="bg-gray-50 p-4 border-b border-gray-100 flex justify-between items-center no-print">
-                                            <div>
-                                                <h3 className="font-bold text-gray-800 text-lg">{dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
-                                                <p className="text-xs text-gray-500 mt-0.5">{monthEntries.length} Entries • {dist} km</p>
-                                            </div>
+                                        <div className="bg-slate-50 p-4 border-b border-gray-100 flex justify-between items-center no-print">
+                                            <div><h3 className="font-bold text-slate-800 text-lg">{dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3><p className="text-xs text-slate-500 mt-0.5">{monthEntries.length} Entries • {dist} km</p></div>
                                             <div className="flex gap-2">
                                                 <button onClick={() => exportCSV(month, monthEntries)} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100"><Icons.Download className="w-4 h-4" /></button>
-                                                <button onClick={printPDF} className="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"><Icons.Printer className="w-4 h-4" /></button>
+                                                <button onClick={printPDF} className="p-2 text-slate-600 bg-gray-100 rounded-lg hover:bg-gray-200"><Icons.Printer className="w-4 h-4" /></button>
                                             </div>
                                         </div>
-                                        
-                                        {/* Print Friendly Header */}
-                                        <div className="print-only p-4 bg-gray-100 border-b font-bold">
-                                            {dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} (Total: {formatCurrency(total)})
+                                        <div className="print-only p-4 bg-gray-100 border-b font-bold">{dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} (Total: {formatCurrency(total)})</div>
+                                        <div className="no-print p-3">
+                                            {/* Responsive Grid for Log Items */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                {monthEntries.map(e => <LogItem key={e.id} entry={e} onDelete={onDelete} compact />)}
+                                            </div>
                                         </div>
-
-                                        <div className="no-print p-2">
-                                            {monthEntries.map(e => <LogItem key={e.id} entry={e} onDelete={onDelete} compact />)}
-                                        </div>
-
-                                        {/* Print Only Table */}
                                         <div className="print-only p-4">
-                                            <table>
-                                                <thead><tr><th>Date</th><th>Vehicle</th><th>Fuel</th><th>Cost</th><th>Dist</th><th>Mileage</th></tr></thead>
-                                                <tbody>
-                                                    {monthEntries.map(e => {
-                                                        const m = (e.distance > 0) ? (Number(e.distance) / (Number(e.cost) / Number(e.pricePerLitre))).toFixed(1) : '-';
-                                                        return (
-                                                            <tr key={e.id}>
-                                                                <td>{new Date(e.date).toLocaleDateString()}</td>
-                                                                <td className="capitalize">{e.vehicle}</td>
-                                                                <td>{e.fuelType || 'Petrol'}</td>
-                                                                <td>{formatCurrency(e.cost)}</td>
-                                                                <td>{e.distance} km</td>
-                                                                <td>{m}</td>
-                                                            </tr>
-                                                        )
-                                                    })}
-                                                </tbody>
-                                            </table>
+                                            <table><thead><tr><th>Date</th><th>Vehicle</th><th>Fuel</th><th>Cost</th><th>Dist</th><th>Mileage</th></tr></thead><tbody>{monthEntries.map(e => <tr key={e.id}><td>{new Date(e.date).toLocaleDateString()}</td><td className="capitalize">{e.vehicle}</td><td>{e.fuelType || 'Petrol'}</td><td>{formatCurrency(e.cost)}</td><td>{e.distance} km</td><td>{(e.distance > 0) ? (Number(e.distance) / (Number(e.cost) / Number(e.pricePerLitre))).toFixed(1) : '-'}</td></tr>)}</tbody></table>
                                         </div>
-
-                                        <div className="bg-gray-50 p-3 text-right no-print">
-                                            <span className="text-xs text-gray-500 uppercase font-bold mr-2">Total:</span>
-                                            <span className="text-gray-900 font-bold">{formatCurrency(total)}</span>
-                                        </div>
+                                        <div className="bg-slate-50 p-3 text-right no-print"><span className="text-xs text-slate-500 uppercase font-bold mr-2">Total:</span><span className="text-slate-900 font-bold">{formatCurrency(total)}</span></div>
                                     </div>
                                 );
                             })}
@@ -367,13 +364,12 @@
         function StatsView({ entries, calculateStats }) {
             const stats = useMemo(() => calculateStats(entries), [entries]);
             return (
-                <div className="h-full overflow-y-auto px-5 py-6 pb-20">
-                    <div className="bg-slate-800 rounded-2xl p-6 text-white mb-6 shadow-lg">
+                <div className="space-y-6">
+                    <div className="bg-slate-800 rounded-2xl p-6 text-white shadow-lg">
                         <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Lifetime Spend</p>
                         <p className="text-4xl font-extrabold">{formatCurrency(stats.totalCost)}</p>
                     </div>
-                    <h3 className="text-gray-800 font-bold text-lg mb-4">Lifetime Averages</h3>
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <StatRow icon={<Icons.Car/>} color="bg-blue-100 text-blue-600" title="Car" data={stats.car} />
                         <StatRow icon={<Icons.Bike/>} color="bg-emerald-100 text-emerald-600" title="Scooty" data={stats.scooty} />
                     </div>
@@ -382,22 +378,17 @@
         }
         
         const StatRow = ({icon, color, title, data}) => (
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${color}`}>{React.cloneElement(icon, {className: "w-6 h-6"})}</div>
-                    <div>
-                        <h4 className="font-bold text-gray-800">{title}</h4>
-                        <p className="text-xs text-gray-400">{data.totalDist} km tracked</p>
-                    </div>
+                    <div className={`p-4 rounded-xl ${color}`}>{React.cloneElement(icon, {className: "w-8 h-8"})}</div>
+                    <div><h4 className="font-bold text-lg text-slate-800">{title}</h4><p className="text-sm text-slate-400">{data.totalDist} km tracked</p></div>
                 </div>
                 <div className="text-right">
-                    <p className="text-xl font-bold text-gray-900">{data.avgMileage} <span className="text-xs text-gray-400 font-medium">km/L</span></p>
-                    <p className="text-xs text-gray-400">Average</p>
+                    <p className="text-2xl font-bold text-slate-900">{data.avgMileage} <span className="text-sm text-slate-400 font-medium">km/L</span></p>
+                    <p className="text-xs text-slate-400">Average</p>
                 </div>
             </div>
         );
-
-        // --- Shared Components ---
 
         function AddEntryForm({ onSave, onCancel, allEntries }) {
             const [vehicle, setVehicle] = useState('scooty');
@@ -406,116 +397,122 @@
             const [pricePerLitre, setPricePerLitre] = useState('');
             const [cost, setCost] = useState('');
             
-            // Find last entry
             const lastEntry = useMemo(() => allEntries.find(e => e.vehicle === vehicle), [vehicle, allEntries]);
-            
-            // Smart Price Memory
             useEffect(() => {
                 const sameFuelEntry = allEntries.find(e => e.vehicle === vehicle && (e.fuelType || 'Petrol') === fuelType);
-                if (sameFuelEntry?.pricePerLitre) setPricePerLitre(sameFuelEntry.pricePerLitre);
-                else setPricePerLitre('');
+                if (sameFuelEntry?.pricePerLitre) setPricePerLitre(sameFuelEntry.pricePerLitre); else setPricePerLitre('');
                 setOdometer('');
             }, [vehicle, fuelType, allEntries]);
 
             const calculatedDist = useMemo(() => {
-                if (lastEntry && odometer) {
-                    const diff = parseFloat(odometer) - parseFloat(lastEntry.odometer || 0);
-                    return diff > 0 ? diff : 0;
-                }
+                if (lastEntry && odometer) { const diff = parseFloat(odometer) - parseFloat(lastEntry.odometer || 0); return diff > 0 ? diff : 0; }
                 return 0;
             }, [odometer, lastEntry]);
 
             const handleSubmit = (e) => {
-                e.preventDefault();
-                if (!odometer || !cost || !pricePerLitre) return;
+                e.preventDefault(); if (!odometer || !cost || !pricePerLitre) return;
                 const finalDist = lastEntry ? calculatedDist : 0;
                 onSave({ id: Date.now(), date: new Date().toISOString(), vehicle, fuelType, distance: finalDist, odometer, pricePerLitre, cost });
             };
-
             const litres = (cost && pricePerLitre) ? (cost / pricePerLitre).toFixed(2) : 0;
             const mileage = (calculatedDist && litres > 0) ? (calculatedDist / litres).toFixed(1) : 0;
 
             return (
-                <div className="h-full bg-white absolute inset-0 z-50 flex flex-col slide-up">
-                    <div className="px-6 py-6 border-b border-gray-100 flex items-center gap-4 shrink-0 bg-white">
-                        <button onClick={onCancel} className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-600"><Icons.ArrowLeft className="w-6 h-6"/></button>
-                        <h2 className="text-xl font-bold text-gray-900">Add Entry</h2>
-                    </div>
-                    <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 flex flex-col">
-                        <div className="space-y-6 flex-1">
-                            <div className="grid grid-cols-2 gap-4">
-                                {['scooty', 'car'].map(v => (
-                                    <label key={v} className={`cursor-pointer rounded-2xl py-4 flex flex-col items-center gap-2 transition-all border-2 ${vehicle === v ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-100 text-gray-400'}`}>
-                                        <input type="radio" className="hidden" name="vehicle" value={v} checked={vehicle === v} onChange={() => setVehicle(v)} />
-                                        {v === 'scooty' ? <Icons.Bike className="w-8 h-8"/> : <Icons.Car className="w-8 h-8"/>}
-                                        <span className="font-bold text-sm capitalize">{v}</span>
-                                    </label>
-                                ))}
-                            </div>
-                            {vehicle === 'car' && (
-                                <div className="bg-gray-100 p-1 rounded-xl flex fade-in">
-                                    {['Petrol', 'Diesel'].map(type => (
-                                        <button key={type} type="button" onClick={() => setFuelType(type)} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${fuelType === type ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>{type}</button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-6">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel}></div>
+                    <div className="bg-white w-full h-full md:h-auto md:max-w-md md:rounded-3xl shadow-2xl relative flex flex-col slide-up md:scale-in md:slide-up-none">
+                        <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white md:rounded-t-3xl">
+                            <h2 className="text-xl font-bold text-slate-900">Add Entry</h2>
+                            <button onClick={onCancel} className="p-2 rounded-full hover:bg-slate-100 text-slate-500"><Icons.X className="w-6 h-6"/></button>
+                        </div>
+                        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 flex flex-col">
+                             <div className="space-y-6 flex-1">
+                                <div className="grid grid-cols-2 gap-4">
+                                    {['scooty', 'car'].map(v => (
+                                        <label key={v} className={`cursor-pointer rounded-2xl py-4 flex flex-col items-center gap-2 transition-all border-2 ${vehicle === v ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-100 text-slate-400'}`}>
+                                            <input type="radio" className="hidden" name="vehicle" value={v} checked={vehicle === v} onChange={() => setVehicle(v)} />
+                                            {v === 'scooty' ? <Icons.Bike className="w-8 h-8"/> : <Icons.Car className="w-8 h-8"/>}<span className="font-bold text-sm capitalize">{v}</span>
+                                        </label>
                                     ))}
                                 </div>
-                            )}
-                            <div className="space-y-2">
-                                <label className="flex justify-between items-end"><span className="text-sm font-bold text-gray-700">Current Odometer</span>{lastEntry ? <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md font-medium">Prev: {lastEntry.odometer}</span> : <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md font-medium">First Entry</span>}</label>
-                                <div className="relative">
-                                    <input type="number" inputMode="decimal" placeholder={lastEntry ? (Number(lastEntry.odometer) + 100).toString() : "e.g. 15000"} value={odometer} onChange={(e) => setOdometer(e.target.value)} className="w-full bg-gray-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-5 py-4 text-2xl font-bold outline-none transition-all" required />
-                                    {calculatedDist > 0 && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-right"><div className="text-xs text-gray-400 uppercase font-semibold">Driven</div><div className="text-lg font-bold text-green-600">+{calculatedDist} km</div></div>}
+                                {vehicle === 'car' && (
+                                    <div className="bg-slate-100 p-1 rounded-xl flex fade-in">
+                                        {['Petrol', 'Diesel'].map(type => (
+                                            <button key={type} type="button" onClick={() => setFuelType(type)} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${fuelType === type ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}>{type}</button>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="space-y-2">
+                                    <label className="flex justify-between items-end"><span className="text-sm font-bold text-slate-700">Current Odometer</span>{lastEntry ? <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md font-medium">Prev: {lastEntry.odometer}</span> : <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md font-medium">First Entry</span>}</label>
+                                    <div className="relative">
+                                        <input type="number" inputMode="decimal" placeholder={lastEntry ? (Number(lastEntry.odometer) + 100).toString() : "e.g. 15000"} value={odometer} onChange={(e) => setOdometer(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-5 py-4 text-2xl font-bold outline-none transition-all" required />
+                                        {calculatedDist > 0 && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-right"><div className="text-xs text-slate-400 uppercase font-semibold">Driven</div><div className="text-lg font-bold text-green-600">+{calculatedDist} km</div></div>}
+                                    </div>
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2"><label className="text-sm font-bold text-slate-700">Price / L</label><input type="number" inputMode="decimal" placeholder="100" value={pricePerLitre} onChange={(e) => setPricePerLitre(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-4 py-3 text-lg font-bold outline-none transition-all" required /></div>
+                                    <div className="space-y-2"><label className="text-sm font-bold text-slate-700">Total Cost</label><input type="number" inputMode="decimal" placeholder="500" value={cost} onChange={(e) => setCost(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-4 py-3 text-lg font-bold outline-none transition-all" required /></div>
+                                </div>
+                                {(litres > 0) && <div className="bg-slate-800 rounded-2xl p-5 text-white shadow-lg"><div className="flex justify-between divide-x divide-white/20"><div className="pr-4 text-center flex-1"><p className="text-2xl font-bold">{mileage > 0 ? mileage : '--'}</p><p className="text-[10px] text-slate-400 uppercase mt-1">Mileage (km/L)</p></div><div className="pl-4 text-center flex-1"><p className="text-2xl font-bold">{litres}</p><p className="text-[10px] text-slate-400 uppercase mt-1">Litres Fuel</p></div></div></div>}
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2"><label className="text-sm font-bold text-gray-700">Price / L</label><input type="number" inputMode="decimal" placeholder="100" value={pricePerLitre} onChange={(e) => setPricePerLitre(e.target.value)} className="w-full bg-gray-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-4 py-3 text-lg font-bold outline-none transition-all" required /></div>
-                                <div className="space-y-2"><label className="text-sm font-bold text-gray-700">Total Cost</label><input type="number" inputMode="decimal" placeholder="500" value={cost} onChange={(e) => setCost(e.target.value)} className="w-full bg-gray-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-4 py-3 text-lg font-bold outline-none transition-all" required /></div>
-                            </div>
-                            {(litres > 0) && <div className="bg-slate-800 rounded-2xl p-5 text-white shadow-lg"><div className="flex justify-between divide-x divide-white/20"><div className="pr-4 text-center flex-1"><p className="text-2xl font-bold">{mileage > 0 ? mileage : '--'}</p><p className="text-[10px] text-slate-400 uppercase mt-1">Mileage (km/L)</p></div><div className="pl-4 text-center flex-1"><p className="text-2xl font-bold">{litres}</p><p className="text-[10px] text-slate-400 uppercase mt-1">Litres Fuel</p></div></div></div>}
-                        </div>
-                        <div className="pt-6 shrink-0"><button type="submit" disabled={!odometer || !cost || !pricePerLitre || (lastEntry && Number(odometer) <= Number(lastEntry.odometer))} className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-indigo-200 disabled:opacity-50 transition-all">{lastEntry ? 'Save Log' : 'Set Baseline'}</button></div>
-                    </form>
+                            <div className="pt-6 shrink-0"><button type="submit" disabled={!odometer || !cost || !pricePerLitre || (lastEntry && Number(odometer) <= Number(lastEntry.odometer))} className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-lg py-4 rounded-2xl shadow-xl shadow-indigo-200 disabled:opacity-50 transition-all">{lastEntry ? 'Save Log' : 'Set Baseline'}</button></div>
+                        </form>
+                    </div>
                 </div>
             );
         }
 
         const NavButton = ({ icon: Icon, label, active, onClick }) => (
-            <button onClick={onClick} className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${active ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}>
+            <button onClick={onClick} className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${active ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Icon className={`w-6 h-6 ${active ? 'fill-indigo-100' : ''}`} />
                 <span className="text-[10px] font-bold">{label}</span>
+            </button>
+        );
+
+        const DesktopNavLink = ({ icon: Icon, label, active, onClick }) => (
+            <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${active ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                <Icon className="w-5 h-5" />
+                <span>{label}</span>
             </button>
         );
 
         const StatCard = ({ icon, title, mileage, cost, color }) => (
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 h-32 relative flex flex-col justify-between">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
-                <div><h3 className="text-gray-500 font-medium text-xs uppercase tracking-wide mb-1">{title}</h3><div className="flex items-baseline gap-1.5"><span className="text-2xl font-bold text-gray-900">{mileage}</span><span className="text-xs text-gray-400 font-medium">km/L</span></div></div>
+                <div>
+                    <h3 className="text-slate-500 font-medium text-xs uppercase tracking-wide mb-1">{title}</h3>
+                    <div className="flex items-baseline gap-1.5">
+                        <span className="text-2xl font-bold text-slate-900">{mileage !== null ? mileage : formatCurrency(cost)}</span>
+                        {mileage !== null && <span className="text-xs text-slate-400 font-medium">km/L</span>}
+                    </div>
+                </div>
             </div>
         );
 
         const LogItem = ({ entry, onDelete, compact }) => {
             const mileage = (entry.distance && entry.distance > 0) ? (Number(entry.distance) / (Number(entry.cost) / Number(entry.pricePerLitre))).toFixed(1) : '0';
             const fuelLabel = entry.fuelType === 'Diesel' ? 'D' : 'P';
-            const fuelColor = entry.fuelType === 'Diesel' ? 'bg-gray-800 text-white' : 'bg-orange-100 text-orange-600';
+            const fuelColor = entry.fuelType === 'Diesel' ? 'bg-slate-800 text-white' : 'bg-orange-100 text-orange-600';
             
             return (
-                <div className={`flex items-center justify-between group active:bg-gray-50 transition-colors ${compact ? 'p-2 border-b border-gray-50 last:border-0' : 'bg-white p-4 rounded-2xl shadow-sm border border-gray-100'}`}>
+                <div className={`flex items-center justify-between group active:bg-slate-50 transition-colors ${compact ? 'p-3 rounded-xl border border-gray-100 hover:border-indigo-100 hover:shadow-sm' : 'bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:border-indigo-200'}`}>
                     <div className="flex items-center gap-4">
                         <div className="relative">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${entry.vehicle === 'car' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>{entry.vehicle === 'car' ? <Icons.Car className="w-5 h-5"/> : <Icons.Bike className="w-5 h-5"/>}</div>
                             {entry.vehicle === 'car' && <div className={`absolute -bottom-1 -right-1 text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white ${fuelColor}`}>{fuelLabel}</div>}
                         </div>
                         <div>
-                            <div className="flex items-center gap-2"><span className="font-bold text-gray-900">{formatCurrency(entry.cost)}</span>{entry.distance > 0 && <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{entry.distance} km</span>}</div>
-                            <div className="text-xs text-gray-400 mt-1 flex items-center gap-2"><span>{formatDate(entry.date)}</span><span>•</span><span>{entry.odometer || 'N/A'} Odo</span>{entry.distance > 0 && <><span>•</span><span className={mileage > 0 ? "text-indigo-600 font-semibold" : ""}>{mileage} km/L</span></>}</div>
+                            <div className="flex items-center gap-2"><span className="font-bold text-slate-900">{formatCurrency(entry.cost)}</span>{entry.distance > 0 && <span className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{entry.distance} km</span>}</div>
+                            <div className="text-xs text-slate-400 mt-1 flex items-center gap-2"><span>{formatDate(entry.date)}</span><span>•</span><span>{entry.odometer || 'N/A'} Odo</span>{entry.distance > 0 && <><span>•</span><span className={mileage > 0 ? "text-indigo-600 font-semibold" : ""}>{mileage} km/L</span></>}</div>
                         </div>
                     </div>
-                    <button onClick={(e) => {e.stopPropagation(); onDelete(entry.id);}} className="text-gray-300 hover:text-red-500 p-2"><Icons.Trash className="w-4 h-4" /></button>
+                    <button onClick={(e) => {e.stopPropagation(); onDelete(entry.id);}} className="text-slate-300 hover:text-red-500 p-2"><Icons.Trash className="w-4 h-4" /></button>
                 </div>
             );
         };
 
         const EmptyState = ({msg = "No logs yet"}) => (
-            <div className="flex flex-col items-center justify-center py-12 text-center opacity-50"><div className="bg-gray-200 p-4 rounded-full mb-3"><Icons.Fuel className="w-8 h-8 text-gray-400"/></div><p className="text-gray-500 font-medium">{msg}</p></div>
+            <div className="flex flex-col items-center justify-center py-12 text-center opacity-50"><div className="bg-slate-200 p-4 rounded-full mb-3"><Icons.Fuel className="w-8 h-8 text-slate-400"/></div><p className="text-slate-500 font-medium">{msg}</p></div>
         );
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
