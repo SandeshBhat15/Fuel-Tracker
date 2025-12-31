@@ -1,87 +1,33 @@
-Fuel Tracker PWA ⛽
+Fuel & Mileage Tracker App
 
-A lightweight, offline-capable Progressive Web App (PWA) designed to track fuel expenses, mileage, and consumption for your vehicles. Built with React and Tailwind CSS in a single file for maximum portability.
+A simple, mobile-friendly web application to track fuel expenses and calculate mileage for your Scooter and Car.
 
-🚀 Features
+Features
 
-Mobile-First Design: Optimized for touch screens with a native app-like feel.
+Dashboard: View monthly spending totals and average mileage (km/l) at a glance.
 
-Multi-Vehicle Support: Track expenses for Cars (Petrol/Diesel) and 2 Wheelers.
+Two Profiles: Separate tracking for "Scooty" and "Car".
 
-Smart Statistics: Automatically calculates:
+Easy Entry: Enter trip distance, fuel price, and total amount to automatically calculate stats.
 
-Average Mileage (km/L)
+History Log: View a list of past refills, sorted by month.
 
-Cost per Kilometer
+Offline Storage: Uses your browser's LocalStorage to save your data automatically. No login required.
 
-Total Monthly Spending
+How to use
 
-Total Fuel Consumed
+Open the app.
 
-Offline Storage: Data is saved instantly to your browser's Local Storage. No internet or login required.
+Click the + (Plus) button to add a new fuel log.
 
-Data Management:
+Select Scooty or Car.
 
-Export to PDF: Generate professional reports with a single click.
+Enter the Distance you traveled since the last time you filled up (or since you last reset your trip meter).
 
-Export to CSV: Download spreadsheets for Excel/Google Sheets.
+Enter the current Fuel Price (per litre).
 
-Backup/Restore: Save your data to a JSON file to transfer between devices.
+Enter the Total Amount you spent on fuel.
 
-Privacy Focused: Your data never leaves your device.
+Click Save Log.
 
-📱 How to Install (Add to Home Screen)
-
-You don't need an App Store to install this!
-
-iOS (Safari)
-
-Open the hosted link in Safari.
-
-Tap the Share button (rectangle with arrow up).
-
-Scroll down and tap "Add to Home Screen".
-
-Tap Add.
-
-Android (Chrome)
-
-Open the hosted link in Chrome.
-
-Tap the three dots menu (top right).
-
-Tap "Add to Home Screen" or "Install App".
-
-🛠️ How to Host for Free (GitHub Pages)
-
-Fork this repository or create a new one.
-
-Create a file named index.html and paste the code.
-
-Go to Settings > Pages in your repository.
-
-Under Build and deployment, select Source as Deploy from a branch.
-
-Select Branch as main (or master) and folder / (root).
-
-Click Save.
-
-Wait ~1 minute, and your app will be live at https://<your-username>.github.io/<repo-name>/.
-
-💻 Running Locally
-
-Since this app is contained within a single file, you can run it without any server:
-
-Download index.html.
-
-Double-click it to open in your web browser.
-
-🧰 Technologies Used
-
-React 18: UI Library (via CDN).
-
-Tailwind CSS: Styling (via CDN).
-
-Babel: JSX compilation in the browser.
-
-jsPDF & AutoTable: For generating PDF reports client-side.
+The app will instantly update your monthly total cost and average mileage.
