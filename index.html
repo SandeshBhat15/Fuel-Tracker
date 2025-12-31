@@ -4,18 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Fuel Tracker</title>
-    
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/483/483497.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/483/483497.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0f172a">
     
+    <!-- React & Tailwind -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- PDF Libs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 
@@ -117,6 +119,11 @@
             useEffect(() => {
                 const saved = localStorage.getItem('fuel_tracker_pro_v2');
                 if (saved) { try { setEntries(JSON.parse(saved)); } catch (e) {} }
+                
+                // Register Service Worker
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('./sw.js').then(() => console.log('SW Registered')).catch(e => console.log('SW Fail', e));
+                }
             }, []);
 
             useEffect(() => {
@@ -224,21 +231,16 @@
                         </div>
                     </main>
 
-                    <div className="md:hidden bg-white border-t border-gray-100 px-2 py-2 pb-safe safe-bottom z-30 shrink-0 absolute bottom-0 w-full shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                        <div className="grid grid-cols-3 items-center">
-                            <NavButton icon={Icons.Home} label="Home" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-                            <NavButton icon={Icons.History} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
-                            <NavButton icon={Icons.Chart} label="Stats" active={activeTab === 'stats'} onClick={() => setActiveTab('stats')} />
+                    <div className="md:hidden bg-white border-t border-gray-100 px-6 py-3 pb-safe safe-bottom flex justify-between items-center z-30 shrink-0 absolute bottom-0 w-full shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                        <NavButton icon={Icons.Home} label="Home" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+                        <NavButton icon={Icons.History} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
+                        <div className="relative -top-8">
+                            <button onClick={() => setShowAdd(true)} className="fab-button bg-indigo-600 text-white w-14 h-14 rounded-full shadow-xl shadow-indigo-300 flex items-center justify-center transform active:scale-95 transition-all border-4 border-slate-50">
+                                <Icons.Plus className="w-7 h-7" />
+                            </button>
                         </div>
+                        <NavButton icon={Icons.Chart} label="Stats" active={activeTab === 'stats'} onClick={() => setActiveTab('stats')} />
                     </div>
-
-                    {/* Floating Action Button (Mobile Only) */}
-                    <button 
-                        onClick={() => setShowAdd(true)} 
-                        className="md:hidden fixed bottom-24 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-xl shadow-indigo-300 flex items-center justify-center transform active:scale-95 transition-all z-40"
-                    >
-                        <Icons.Plus className="w-7 h-7" />
-                    </button>
 
                     {showAdd && <AddEntryForm onSave={addEntry} onCancel={() => setShowAdd(false)} allEntries={entries} />}
                 </div>
