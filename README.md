@@ -1,35 +1,25 @@
+# Fuel & Mileage Tracker App
 
-Fuel & Mileage Tracker App
-https://sandeshbhat15.github.io/Fuel-Tracker/
+🔗 Live App: https://sandeshbhat15.github.io/Fuel-Tracker/
 
-A simple, mobile-friendly web application to track fuel expenses and calculate mileage for your Scooter and Car.
+A simple, mobile-friendly web application to track fuel expenses and calculate mileage for your **Scooter** and **Car**.
 
-Features
+## Features
 
-Dashboard: View monthly spending totals and average mileage (km/l) at a glance.
+- **Dashboard** – View monthly spending totals and average mileage (km/l) at a glance  
+- **Two Profiles** – Separate tracking for *Scooty* and *Car*  
+- **Easy Entry** – Enter trip distance, fuel price, and total amount to automatically calculate stats  
+- **History Log** – View a list of past refills, sorted by month  
+- **Offline Storage** – Uses browser LocalStorage; no login required  
 
-Two Profiles: Separate tracking for "Scooty" and "Car".
+## How to Use
 
-Easy Entry: Enter trip distance, fuel price, and total amount to automatically calculate stats.
+1. Open the app  
+2. Click the **+ (Plus)** button to add a new fuel log  
+3. Select **Scooty** or **Car**  
+4. Enter the distance traveled since last refill  
+5. Enter fuel price (per litre)  
+6. Enter total amount spent  
+7. Click **Save Log**
 
-History Log: View a list of past refills, sorted by month.
-
-Offline Storage: Uses your browser's LocalStorage to save your data automatically. No login required.
-
-How to use
-
-Open the app.
-
-Click the + (Plus) button to add a new fuel log.
-
-Select Scooty or Car.
-
-Enter the Distance you traveled since the last time you filled up (or since you last reset your trip meter).
-
-Enter the current Fuel Price (per litre).
-
-Enter the Total Amount you spent on fuel.
-
-Click Save Log.
-
-The app will instantly update your monthly total cost and average mileage.
+The app instantly updates your monthly fuel cost and average mileage.
