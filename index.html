@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Fuel Tracker</title>
     
-    <!-- App Icons for Home Screen -->
+    <!-- App Icons -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/483/483497.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/483/483497.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,56 +18,71 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
     <style>
+        :root {
+            --app-height: 100dvh;
+        }
+        
         body { 
             -webkit-tap-highlight-color: transparent; 
             overscroll-behavior-y: none;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #f8fafc;
+            touch-action: pan-x pan-y;
+            height: var(--app-height);
+            width: 100vw;
+            overflow: hidden;
         }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        #root {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Custom Scrollbar for desktop views */
+        .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         
-        .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        /* Animation Classes */
+        .slide-up { animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
         .fade-in { animation: fadeIn 0.2s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        /* Modal Animation for Desktop */
-        .scale-in { animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .scale-in { animation: scaleIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
+        /* Mobile Inputs Cleanup */
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-
-        /* Print Styles */
-        @media print {
-            @page { margin: 1cm; size: A4; }
-            body { background: white; -webkit-print-color-adjust: exact; }
-            #root { max-width: none; height: auto; overflow: visible; box-shadow: none; display: block; }
-            .no-print, header, nav, aside, .fab-button, .sidebar { display: none !important; }
-            .print-only { display: block !important; }
-            .history-container { padding: 0 !important; overflow: visible !important; height: auto !important; }
-            .history-card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; margin-bottom: 20px; page-break-inside: avoid; }
-            table { width: 100%; border-collapse: collapse; font-size: 12px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f3f4f6; }
-            main { margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
+        
+        /* Prevent iOS Zoom on focus */
+        @media screen and (max-width: 768px) {
+            input, select, textarea { font-size: 16px !important; }
         }
-        .print-only { display: none; }
+
+        /* Safe Areas for Notch Devices */
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
-<body class="antialiased h-screen w-screen overflow-hidden text-slate-900 bg-slate-50">
-    <div id="root" class="h-full w-full"></div>
+<body class="antialiased text-slate-900 bg-slate-50">
+    <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
+        const { jsPDF } = window.jspdf;
 
-        // --- ICONS ---
+        // ==========================================
+        // ICONS COMPONENT LIBRARY
+        // ==========================================
         const Icons = {
             Car: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>,
             Bike: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>,
@@ -80,30 +95,40 @@
             Chart: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
             Download: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
             Upload: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
-            Printer: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
+            FileText: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>,
             ChevronDown: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="6 9 12 15 18 9"/></svg>,
             Save: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-            X: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            X: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            Droplet: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
         };
 
+        // ==========================================
+        // UTILITIES
+        // ==========================================
         const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
         const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
+        // ==========================================
+        // MAIN APP COMPONENT
+        // ==========================================
         function App() {
             const [activeTab, setActiveTab] = useState('home');
             const [showAdd, setShowAdd] = useState(false);
             const [entries, setEntries] = useState([]);
             const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
+            // Load from LocalStorage
             useEffect(() => {
                 const saved = localStorage.getItem('fuel_tracker_pro_v2');
                 if (saved) { try { setEntries(JSON.parse(saved)); } catch (e) {} }
             }, []);
 
+            // Save to LocalStorage
             useEffect(() => {
                 localStorage.setItem('fuel_tracker_pro_v2', JSON.stringify(entries));
             }, [entries]);
 
+            // CRUD Operations
             const addEntry = (entry) => {
                 setEntries([entry, ...entries]);
                 setShowAdd(false);
@@ -113,13 +138,12 @@
                 if (window.confirm('Delete this entry?')) setEntries(entries.filter(e => e.id !== id));
             };
 
-            // DATA MANAGEMENT
+            // JSON Backup Feature
             const backupData = () => {
                 const dataStr = JSON.stringify(entries, null, 2);
                 const blob = new Blob([dataStr], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `fuel_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+                const a = document.createElement('a'); a.href = url; a.download = `fuel_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
             };
 
             const restoreData = (event) => {
@@ -138,11 +162,18 @@
                 reader.readAsText(file);
             };
 
+            // STATS CALCULATION LOGIC
             const calculateStats = (data) => {
                  const calc = (type) => {
                     const typeEntries = data.filter(e => e.vehicle === type);
+                    
                     const totalCost = typeEntries.reduce((sum, e) => sum + Number(e.cost), 0);
                     const totalDist = typeEntries.reduce((sum, e) => sum + Number(e.distance || 0), 0);
+                    
+                    // Calculate Total Fuel (Cost / PricePerLitre)
+                    const totalFuel = typeEntries.reduce((sum, e) => sum + (Number(e.cost) / Number(e.pricePerLitre)), 0);
+
+                    // Mileage Calculation: Only use entries with distance > 0 for valid average
                     const validMileageEntries = typeEntries.filter(e => e.distance > 0);
                     let totalFuelForMileage = 0;
                     let totalDistForMileage = 0;
@@ -150,13 +181,21 @@
                         totalDistForMileage += Number(e.distance);
                         totalFuelForMileage += (Number(e.cost) / Number(e.pricePerLitre));
                     });
+                    
                     const avgMileage = totalFuelForMileage > 0 ? (totalDistForMileage / totalFuelForMileage).toFixed(1) : 0;
-                    return { totalCost, avgMileage, totalDist };
+                    const costPerKm = totalDist > 0 ? (totalCost / totalDist).toFixed(2) : 0;
+
+                    return { totalCost, avgMileage, totalDist, totalFuel: totalFuel.toFixed(1), costPerKm };
                 };
+
+                const overallCost = data.reduce((sum, e) => sum + Number(e.cost), 0);
+                const overallFuel = data.reduce((sum, e) => sum + (Number(e.cost) / Number(e.pricePerLitre)), 0);
+
                 return {
                     car: calc('car'),
                     scooty: calc('scooty'),
-                    totalCost: data.reduce((sum, e) => sum + Number(e.cost), 0)
+                    totalCost: overallCost,
+                    totalFuel: overallFuel.toFixed(1)
                 };
             };
 
@@ -164,10 +203,10 @@
             const currentStats = useMemo(() => calculateStats(currentMonthEntries), [currentMonthEntries]);
 
             return (
-                <div className="h-full w-full flex flex-col md:flex-row bg-slate-50 text-slate-900 print:bg-white print:block">
+                <div className="h-full w-full flex flex-col md:flex-row bg-slate-50 text-slate-900">
                     
-                    {/* DESKTOP SIDEBAR */}
-                    <aside className="hidden md:flex flex-col w-72 bg-slate-900 text-white p-6 shrink-0 h-full overflow-y-auto no-print">
+                    {/* --- DESKTOP SIDEBAR --- */}
+                    <aside className="hidden md:flex flex-col w-72 bg-slate-900 text-white p-6 shrink-0 h-full overflow-y-auto custom-scroll">
                         <div className="mb-10">
                             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
                                 <div className="p-2 bg-indigo-600 rounded-lg"><Icons.Fuel className="w-6 h-6"/></div>
@@ -192,39 +231,35 @@
                         </div>
                     </aside>
 
-                    {/* MOBILE HEADER */}
-                    <header className="md:hidden bg-slate-900 text-white pt-10 pb-6 px-6 rounded-b-[2rem] shadow-xl z-20 shrink-0 no-print">
-                        {activeTab === 'home' && (
-                            <>
-                                <div className="flex justify-between items-center mb-6">
-                                    <div><h1 className="text-2xl font-bold">Fuel Tracker</h1><p className="text-slate-400 text-xs">Ultimate Edition</p></div>
-                                    <div className="relative">
-                                        <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="absolute opacity-0 w-full h-full cursor-pointer" />
-                                        <div className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-semibold hover:bg-slate-700 transition-colors">
-                                            <span>{new Date(selectedMonth).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}</span>
-                                            <Icons.ChevronDown className="w-3 h-3 opacity-70"/>
+                    {/* --- MOBILE HEADER --- */}
+                    <header className="md:hidden bg-slate-900 text-white pt-safe px-6 pb-6 rounded-b-[2rem] shadow-xl z-20 shrink-0">
+                        <div className="pt-4">
+                            {activeTab === 'home' && (
+                                <>
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div><h1 className="text-2xl font-bold">Fuel Tracker</h1><p className="text-slate-400 text-xs">Ultimate Edition</p></div>
+                                        <div className="relative">
+                                            <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="absolute opacity-0 w-full h-full cursor-pointer" />
+                                            <div className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-semibold hover:bg-slate-700 transition-colors">
+                                                <span>{new Date(selectedMonth).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}</span>
+                                                <Icons.ChevronDown className="w-3 h-3 opacity-70"/>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-5 flex items-center justify-between shadow-lg shadow-indigo-500/30">
-                                    <div><p className="text-indigo-100 text-xs font-medium mb-1 uppercase tracking-wider">Monthly Spend</p><p className="text-3xl font-extrabold tracking-tight">{formatCurrency(currentStats.totalCost)}</p></div>
-                                    <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"><Icons.Fuel className="text-white w-5 h-5" /></div>
-                                </div>
-                            </>
-                        )}
-                        {activeTab === 'history' && (
-                            <div><h1 className="text-2xl font-bold">History Log</h1><p className="text-slate-400 text-xs">Export & Manage Data</p></div>
-                        )}
-                        {activeTab === 'stats' && (
-                            <div><h1 className="text-2xl font-bold">Statistics</h1><p className="text-slate-400 text-xs">Lifetime Analysis</p></div>
-                        )}
+                                    <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-5 flex items-center justify-between shadow-lg shadow-indigo-500/30">
+                                        <div><p className="text-indigo-100 text-xs font-medium mb-1 uppercase tracking-wider">Monthly Spend</p><p className="text-3xl font-extrabold tracking-tight">{formatCurrency(currentStats.totalCost)}</p></div>
+                                        <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"><Icons.Fuel className="text-white w-5 h-5" /></div>
+                                    </div>
+                                </>
+                            )}
+                            {activeTab === 'history' && <div><h1 className="text-2xl font-bold">History Log</h1><p className="text-slate-400 text-xs">Export & Manage Data</p></div>}
+                            {activeTab === 'stats' && <div><h1 className="text-2xl font-bold">Statistics</h1><p className="text-slate-400 text-xs">Lifetime Analysis</p></div>}
+                        </div>
                     </header>
 
-                    {/* MAIN CONTENT AREA */}
-                    <main className="flex-1 h-full overflow-hidden flex flex-col relative print:overflow-visible print:h-auto">
-                        
-                        {/* Desktop Header Bar */}
-                        <div className="hidden md:flex items-center justify-between p-8 pb-0 shrink-0 no-print">
+                    {/* --- MAIN CONTENT AREA --- */}
+                    <main className="flex-1 overflow-hidden flex flex-col relative">
+                        <div className="hidden md:flex items-center justify-between p-8 pb-0 shrink-0">
                             <h2 className="text-2xl font-bold text-slate-800">
                                 {activeTab === 'home' ? 'Dashboard' : activeTab === 'history' ? 'History Log' : 'Statistics'}
                             </h2>
@@ -233,55 +268,48 @@
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-5 md:p-8 pb-24 md:pb-8 history-container">
+                        <div className="flex-1 overflow-y-auto p-5 md:p-8 pb-32 md:pb-8 custom-scroll">
                             {activeTab === 'home' && <Dashboard stats={currentStats} entries={currentMonthEntries} onDelete={deleteEntry} />}
-                            {activeTab === 'history' && <HistoryView entries={entries} onDelete={deleteEntry} onBackup={backupData} onRestore={restoreData} />}
+                            {activeTab === 'history' && <HistoryView entries={entries} onDelete={deleteEntry} onBackup={backupData} onRestore={restoreData} calculateStats={calculateStats} />}
                             {activeTab === 'stats' && <StatsView entries={entries} calculateStats={calculateStats} />}
                         </div>
                     </main>
 
-                    {/* MOBILE BOTTOM NAV */}
-                    <div className="md:hidden bg-white border-t border-gray-100 px-8 py-2 pb-6 safe-bottom flex justify-between items-center z-30 shrink-0 absolute bottom-0 w-full no-print">
+                    {/* --- MOBILE BOTTOM NAV --- */}
+                    <div className="md:hidden bg-white border-t border-gray-100 px-8 py-3 pb-safe safe-bottom flex justify-between items-center z-30 shrink-0 absolute bottom-0 w-full shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                         <NavButton icon={Icons.Home} label="Home" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
                         <div className="relative -top-8">
-                            <button onClick={() => setShowAdd(true)} className="fab-button bg-indigo-600 text-white w-16 h-16 rounded-full shadow-xl shadow-indigo-300 flex items-center justify-center transform active:scale-95 transition-all border-4 border-slate-50">
-                                <Icons.Plus className="w-8 h-8" />
+                            <button onClick={() => setShowAdd(true)} className="fab-button bg-indigo-600 text-white w-14 h-14 rounded-full shadow-xl shadow-indigo-300 flex items-center justify-center transform active:scale-95 transition-all border-4 border-slate-50">
+                                <Icons.Plus className="w-7 h-7" />
                             </button>
                         </div>
                         <NavButton icon={Icons.History} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
                     </div>
 
-                    {/* ADD ENTRY MODAL */}
+                    {/* --- ADD ENTRY MODAL --- */}
                     {showAdd && (
                         <AddEntryForm onSave={addEntry} onCancel={() => setShowAdd(false)} allEntries={entries} />
                     )}
-
-                    {/* PRINT HEADER */}
-                    <div className="print-only p-8">
-                        <h1 className="text-2xl font-bold mb-2">Fuel Tracker Report</h1>
-                        <p className="text-sm text-gray-500 mb-6">Generated on {new Date().toLocaleDateString()}</p>
-                    </div>
                 </div>
             );
         }
 
-        // --- SUB COMPONENTS ---
+        // ==========================================
+        // SUB COMPONENTS
+        // ==========================================
 
         function Dashboard({ stats, entries, onDelete }) {
             return (
                 <div className="space-y-8">
-                    {/* Responsive Grid for Stats */}
                     <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard icon={<Icons.Car className="w-6 h-6 text-blue-600" />} title="Car Costs" mileage={null} cost={stats.car.totalCost} color="bg-blue-50 border-blue-100" />
-                        <StatCard icon={<Icons.Car className="w-6 h-6 text-blue-600" />} title="Car Mileage" mileage={stats.car.avgMileage} cost={null} color="bg-blue-50 border-blue-100" />
-                        <StatCard icon={<Icons.Bike className="w-6 h-6 text-emerald-600" />} title="Scooty Costs" mileage={null} cost={stats.scooty.totalCost} color="bg-emerald-50 border-emerald-100" />
-                        <StatCard icon={<Icons.Bike className="w-6 h-6 text-emerald-600" />} title="Scooty Mileage" mileage={stats.scooty.avgMileage} cost={null} color="bg-emerald-50 border-emerald-100" />
+                        <StatCard icon={<Icons.Car className="w-6 h-6 text-blue-600" />} title="Car Costs" mainValue={formatCurrency(stats.car.totalCost)} subValue={`${stats.car.totalFuel} L`} color="bg-blue-50 border-blue-100" />
+                        <StatCard icon={<Icons.Car className="w-6 h-6 text-blue-600" />} title="Car Mileage" mainValue={stats.car.avgMileage} subValue="km/L" color="bg-blue-50 border-blue-100" />
+                        <StatCard icon={<Icons.Bike className="w-6 h-6 text-emerald-600" />} title="2 Wheeler Costs" mainValue={formatCurrency(stats.scooty.totalCost)} subValue={`${stats.scooty.totalFuel} L`} color="bg-emerald-50 border-emerald-100" />
+                        <StatCard icon={<Icons.Bike className="w-6 h-6 text-emerald-600" />} title="2 Wheeler Mileage" mainValue={stats.scooty.avgMileage} subValue="km/L" color="bg-emerald-50 border-emerald-100" />
                     </div>
-                    
                     <div>
                         <div className="mb-4 flex items-center justify-between"><h3 className="text-gray-800 font-bold text-lg">Recent Logs</h3></div>
                         {entries.length === 0 ? <EmptyState /> : 
-                            // Grid on desktop, list on mobile
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {entries.map(e => <LogItem key={e.id} entry={e} onDelete={onDelete} />)}
                             </div>
@@ -291,7 +319,7 @@
             );
         }
 
-        function HistoryView({ entries, onDelete, onBackup, onRestore }) {
+        function HistoryView({ entries, onDelete, onBackup, onRestore, calculateStats }) {
             const grouped = useMemo(() => {
                 const groups = {};
                 entries.forEach(e => {
@@ -302,27 +330,98 @@
                 return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
             }, [entries]);
 
+            // --- PDF GENERATOR ---
+            const generatePDF = () => {
+                const doc = new jsPDF();
+                const stats = calculateStats(entries);
+
+                // 1. Report Header
+                doc.setFontSize(22);
+                doc.setTextColor(30, 41, 59); // Slate-800
+                doc.text("Fuel Tracker Report", 14, 20);
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139); // Slate-500
+                doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 26);
+
+                // 2. Summary Table (New Feature)
+                doc.autoTable({
+                    startY: 35,
+                    head: [['Metric', 'Car', '2 Wheeler', 'Total']],
+                    body: [
+                        ['Total Cost', formatCurrency(stats.car.totalCost), formatCurrency(stats.scooty.totalCost), formatCurrency(stats.totalCost)],
+                        ['Total Distance', `${stats.car.totalDist} km`, `${stats.scooty.totalDist} km`, `${stats.car.totalDist + stats.scooty.totalDist} km`],
+                        ['Fuel Consumed', `${stats.car.totalFuel} L`, `${stats.scooty.totalFuel} L`, `${(parseFloat(stats.car.totalFuel) + parseFloat(stats.scooty.totalFuel)).toFixed(1)} L`],
+                        ['Avg Mileage', `${stats.car.avgMileage} km/L`, `${stats.scooty.avgMileage} km/L`, '-']
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [71, 85, 105] } // Slate-600
+                });
+
+                let yPos = doc.lastAutoTable.finalY + 15;
+
+                // 3. Monthly Logs
+                grouped.forEach(([month, monthEntries]) => {
+                    if (yPos > 270) { doc.addPage(); yPos = 20; }
+
+                    const dateObj = new Date(month + '-01');
+                    const monthTitle = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    const total = monthEntries.reduce((sum, e) => sum + Number(e.cost), 0);
+
+                    doc.setFontSize(12);
+                    doc.setFont("helvetica", "bold");
+                    doc.setTextColor(30, 41, 59);
+                    doc.text(`${monthTitle} (Total: ${formatCurrency(total)})`, 14, yPos);
+                    
+                    const tableData = monthEntries.map(e => {
+                        const m = (e.distance > 0) ? (Number(e.distance) / (Number(e.cost) / Number(e.pricePerLitre))).toFixed(1) : '-';
+                        return [
+                            new Date(e.date).toLocaleDateString(),
+                            e.vehicle === 'scooty' ? '2 Wheeler' : 'Car',
+                            e.vehicleName || '-',
+                            e.fuelType || 'Petrol',
+                            e.distance + ' km',
+                            formatCurrency(e.cost),
+                            m
+                        ];
+                    });
+
+                    doc.autoTable({
+                        startY: yPos + 5,
+                        head: [['Date', 'Vehicle', 'Name', 'Fuel', 'Dist', 'Cost', 'Mileage']],
+                        body: tableData,
+                        theme: 'grid',
+                        headStyles: { fillColor: [79, 70, 229] }, // Indigo-600
+                        styles: { fontSize: 8 },
+                    });
+
+                    yPos = doc.lastAutoTable.finalY + 15;
+                });
+
+                doc.save("fuel_tracker_report.pdf");
+            };
+
             const exportCSV = (monthKey, monthEntries) => {
-                const csvRows = [['Date', 'Vehicle', 'Fuel Type', 'Odometer', 'Distance (km)', 'Price (INR)', 'Cost (INR)', 'Mileage (km/L)']];
+                const csvRows = [['Date', 'Vehicle', 'Name', 'Fuel Type', 'Odometer', 'Distance (km)', 'Price (INR)', 'Cost (INR)', 'Mileage (km/L)']];
                 monthEntries.forEach(e => {
                     const litres = (Number(e.cost) / Number(e.pricePerLitre)).toFixed(2);
                     const mileage = (e.distance > 0 && litres > 0) ? (e.distance / litres).toFixed(1) : 0;
-                    csvRows.push([new Date(e.date).toLocaleDateString(), e.vehicle, e.fuelType || 'Petrol', e.odometer || '-', e.distance, e.pricePerLitre, e.cost, mileage]);
+                    const vehicleLabel = e.vehicle === 'scooty' ? '2 Wheeler' : 'Car';
+                    csvRows.push([new Date(e.date).toLocaleDateString(), vehicleLabel, e.vehicleName || '', e.fuelType || 'Petrol', e.odometer || '-', e.distance, e.pricePerLitre, e.cost, mileage]);
                 });
                 const blob = new Blob([csvRows.map(row => row.join(',')).join('\n')], { type: 'text/csv' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a'); a.href = url; a.download = `Fuel_Log_${monthKey}.csv`; a.click();
             };
 
-            const printPDF = () => window.print();
-
             return (
                 <div className="space-y-6">
-                    <div className="no-print bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <div><h3 className="font-bold text-indigo-900">Data Management</h3><p className="text-xs text-indigo-600">Save your data locally</p></div>
-                        <div className="flex gap-2 w-full sm:w-auto">
-                            <button onClick={onBackup} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm border border-indigo-100 text-indigo-600 font-bold text-xs uppercase hover:bg-indigo-50"><Icons.Save className="w-4 h-4" /> Backup</button>
-                            <label className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm border border-indigo-100 text-indigo-600 font-bold text-xs uppercase hover:bg-indigo-50 cursor-pointer"><Icons.Upload className="w-4 h-4" /> Load <input type="file" accept=".json" onChange={onRestore} className="hidden" /></label>
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div><h3 className="font-bold text-indigo-900">Data Management</h3><p className="text-xs text-indigo-600">Save/Load Backup & Export</p></div>
+                        <div className="flex gap-2 w-full sm:w-auto flex-wrap">
+                            <button onClick={onBackup} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm border border-indigo-100 text-indigo-600 font-bold text-xs uppercase hover:bg-indigo-50"><Icons.Save className="w-4 h-4" /> Backup</button>
+                            <label className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm border border-indigo-100 text-indigo-600 font-bold text-xs uppercase hover:bg-indigo-50 cursor-pointer"><Icons.Upload className="w-4 h-4" /> Load <input type="file" accept=".json" onChange={onRestore} className="hidden" /></label>
+                            <button onClick={generatePDF} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm border border-indigo-100 text-slate-600 font-bold text-xs uppercase hover:bg-gray-50"><Icons.FileText className="w-4 h-4" /> Download PDF</button>
                         </div>
                     </div>
 
@@ -333,25 +432,17 @@
                                 const dist = monthEntries.reduce((sum, e) => sum + Number(e.distance || 0), 0);
                                 const dateObj = new Date(month + '-01');
                                 return (
-                                    <div key={month} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden history-card">
-                                        <div className="bg-slate-50 p-4 border-b border-gray-100 flex justify-between items-center no-print">
+                                    <div key={month} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                        <div className="bg-slate-50 p-4 border-b border-gray-100 flex justify-between items-center">
                                             <div><h3 className="font-bold text-slate-800 text-lg">{dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3><p className="text-xs text-slate-500 mt-0.5">{monthEntries.length} Entries • {dist} km</p></div>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => exportCSV(month, monthEntries)} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100"><Icons.Download className="w-4 h-4" /></button>
-                                                <button onClick={printPDF} className="p-2 text-slate-600 bg-gray-100 rounded-lg hover:bg-gray-200"><Icons.Printer className="w-4 h-4" /></button>
-                                            </div>
+                                            <button onClick={() => exportCSV(month, monthEntries)} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100"><Icons.Download className="w-4 h-4" /></button>
                                         </div>
-                                        <div className="print-only p-4 bg-gray-100 border-b font-bold">{dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} (Total: {formatCurrency(total)})</div>
-                                        <div className="no-print p-3">
-                                            {/* Responsive Grid for Log Items */}
+                                        <div className="p-3">
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                                 {monthEntries.map(e => <LogItem key={e.id} entry={e} onDelete={onDelete} compact />)}
                                             </div>
                                         </div>
-                                        <div className="print-only p-4">
-                                            <table><thead><tr><th>Date</th><th>Vehicle</th><th>Fuel</th><th>Cost</th><th>Dist</th><th>Mileage</th></tr></thead><tbody>{monthEntries.map(e => <tr key={e.id}><td>{new Date(e.date).toLocaleDateString()}</td><td className="capitalize">{e.vehicle}</td><td>{e.fuelType || 'Petrol'}</td><td>{formatCurrency(e.cost)}</td><td>{e.distance} km</td><td>{(e.distance > 0) ? (Number(e.distance) / (Number(e.cost) / Number(e.pricePerLitre))).toFixed(1) : '-'}</td></tr>)}</tbody></table>
-                                        </div>
-                                        <div className="bg-slate-50 p-3 text-right no-print"><span className="text-xs text-slate-500 uppercase font-bold mr-2">Total:</span><span className="text-slate-900 font-bold">{formatCurrency(total)}</span></div>
+                                        <div className="bg-slate-50 p-3 text-right"><span className="text-xs text-slate-500 uppercase font-bold mr-2">Total:</span><span className="text-slate-900 font-bold">{formatCurrency(total)}</span></div>
                                     </div>
                                 );
                             })}
@@ -361,48 +452,92 @@
             );
         }
 
+        // --- STATS VIEW (IMPROVED) ---
         function StatsView({ entries, calculateStats }) {
             const stats = useMemo(() => calculateStats(entries), [entries]);
             return (
                 <div className="space-y-6">
-                    <div className="bg-slate-800 rounded-2xl p-6 text-white shadow-lg">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Lifetime Spend</p>
-                        <p className="text-4xl font-extrabold">{formatCurrency(stats.totalCost)}</p>
+                    {/* Overall Summary Card */}
+                    <div className="bg-slate-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                        <div className="relative z-10 flex justify-between items-end">
+                            <div>
+                                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Lifetime Spend</p>
+                                <p className="text-4xl font-extrabold">{formatCurrency(stats.totalCost)}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Fuel</p>
+                                <p className="text-2xl font-bold text-emerald-400">{stats.totalFuel} L</p>
+                            </div>
+                        </div>
+                        <div className="absolute right-0 top-0 p-6 opacity-5 pointer-events-none">
+                            <Icons.Fuel className="w-32 h-32" />
+                        </div>
                     </div>
+
+                    {/* Vehicle Detail Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <StatRow icon={<Icons.Car/>} color="bg-blue-100 text-blue-600" title="Car" data={stats.car} />
-                        <StatRow icon={<Icons.Bike/>} color="bg-emerald-100 text-emerald-600" title="Scooty" data={stats.scooty} />
+                        <StatRowDetailed 
+                            icon={<Icons.Car/>} 
+                            color="bg-blue-100 text-blue-600" 
+                            title="Car" 
+                            data={stats.car} 
+                        />
+                        <StatRowDetailed 
+                            icon={<Icons.Bike/>} 
+                            color="bg-emerald-100 text-emerald-600" 
+                            title="2 Wheeler" 
+                            data={stats.scooty} 
+                        />
                     </div>
                 </div>
             );
         }
         
-        const StatRow = ({icon, color, title, data}) => (
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
-                <div className="flex items-center gap-4">
+        // Detailed Stat Row Component
+        const StatRowDetailed = React.memo(({icon, color, title, data}) => (
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex items-center gap-4 mb-6">
                     <div className={`p-4 rounded-xl ${color}`}>{React.cloneElement(icon, {className: "w-8 h-8"})}</div>
-                    <div><h4 className="font-bold text-lg text-slate-800">{title}</h4><p className="text-sm text-slate-400">{data.totalDist} km tracked</p></div>
+                    <div><h4 className="font-bold text-xl text-slate-800">{title}</h4><p className="text-sm text-slate-400 font-medium">Performance Stats</p></div>
                 </div>
-                <div className="text-right">
-                    <p className="text-2xl font-bold text-slate-900">{data.avgMileage} <span className="text-sm text-slate-400 font-medium">km/L</span></p>
-                    <p className="text-xs text-slate-400">Average</p>
+                
+                <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                    <div>
+                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Distance</p>
+                        <p className="text-lg font-bold text-slate-900">{data.totalDist} km</p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Fuel Used</p>
+                        <p className="text-lg font-bold text-slate-900">{data.totalFuel} L</p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Avg Mileage</p>
+                        <p className="text-lg font-bold text-indigo-600">{data.avgMileage} <span className="text-xs text-slate-400">km/L</span></p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Cost / KM</p>
+                        <p className="text-lg font-bold text-rose-600">₹{data.costPerKm}</p>
+                    </div>
                 </div>
             </div>
-        );
+        ));
 
         function AddEntryForm({ onSave, onCancel, allEntries }) {
             const [vehicle, setVehicle] = useState('scooty');
+            const [vehicleName, setVehicleName] = useState('');
             const [fuelType, setFuelType] = useState('Petrol');
             const [odometer, setOdometer] = useState('');
             const [pricePerLitre, setPricePerLitre] = useState('');
             const [cost, setCost] = useState('');
             
             const lastEntry = useMemo(() => allEntries.find(e => e.vehicle === vehicle), [vehicle, allEntries]);
+            
             useEffect(() => {
                 const sameFuelEntry = allEntries.find(e => e.vehicle === vehicle && (e.fuelType || 'Petrol') === fuelType);
                 if (sameFuelEntry?.pricePerLitre) setPricePerLitre(sameFuelEntry.pricePerLitre); else setPricePerLitre('');
+                if (lastEntry?.vehicleName) setVehicleName(lastEntry.vehicleName); else setVehicleName('');
                 setOdometer('');
-            }, [vehicle, fuelType, allEntries]);
+            }, [vehicle, fuelType, allEntries, lastEntry]);
 
             const calculatedDist = useMemo(() => {
                 if (lastEntry && odometer) { const diff = parseFloat(odometer) - parseFloat(lastEntry.odometer || 0); return diff > 0 ? diff : 0; }
@@ -412,7 +547,7 @@
             const handleSubmit = (e) => {
                 e.preventDefault(); if (!odometer || !cost || !pricePerLitre) return;
                 const finalDist = lastEntry ? calculatedDist : 0;
-                onSave({ id: Date.now(), date: new Date().toISOString(), vehicle, fuelType, distance: finalDist, odometer, pricePerLitre, cost });
+                onSave({ id: Date.now(), date: new Date().toISOString(), vehicle, vehicleName, fuelType, distance: finalDist, odometer, pricePerLitre, cost });
             };
             const litres = (cost && pricePerLitre) ? (cost / pricePerLitre).toFixed(2) : 0;
             const mileage = (calculatedDist && litres > 0) ? (calculatedDist / litres).toFixed(1) : 0;
@@ -421,20 +556,26 @@
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-6">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel}></div>
                     <div className="bg-white w-full h-full md:h-auto md:max-w-md md:rounded-3xl shadow-2xl relative flex flex-col slide-up md:scale-in md:slide-up-none">
-                        <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white md:rounded-t-3xl">
+                        <div className="px-6 py-4 pt-safe border-b border-gray-100 flex items-center justify-between shrink-0 bg-white md:rounded-t-3xl">
                             <h2 className="text-xl font-bold text-slate-900">Add Entry</h2>
                             <button onClick={onCancel} className="p-2 rounded-full hover:bg-slate-100 text-slate-500"><Icons.X className="w-6 h-6"/></button>
                         </div>
-                        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 flex flex-col">
+                        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-6 pb-20 md:pb-6 custom-scroll">
                              <div className="space-y-6 flex-1">
                                 <div className="grid grid-cols-2 gap-4">
                                     {['scooty', 'car'].map(v => (
                                         <label key={v} className={`cursor-pointer rounded-2xl py-4 flex flex-col items-center gap-2 transition-all border-2 ${vehicle === v ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-100 text-slate-400'}`}>
                                             <input type="radio" className="hidden" name="vehicle" value={v} checked={vehicle === v} onChange={() => setVehicle(v)} />
-                                            {v === 'scooty' ? <Icons.Bike className="w-8 h-8"/> : <Icons.Car className="w-8 h-8"/>}<span className="font-bold text-sm capitalize">{v}</span>
+                                            {v === 'scooty' ? <Icons.Bike className="w-8 h-8"/> : <Icons.Car className="w-8 h-8"/>}<span className="font-bold text-sm capitalize">{v === 'scooty' ? '2 Wheeler' : 'Car'}</span>
                                         </label>
                                     ))}
                                 </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700">Vehicle Name <span className="text-slate-400 font-normal">(Optional)</span></label>
+                                    <input type="text" placeholder={vehicle === 'scooty' ? "e.g. Hero Splendor" : "e.g. Red Swift"} value={vehicleName} onChange={(e) => setVehicleName(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-4 py-3 text-base font-bold outline-none transition-colors duration-200" />
+                                </div>
+
                                 {vehicle === 'car' && (
                                     <div className="bg-slate-100 p-1 rounded-xl flex fade-in">
                                         {['Petrol', 'Diesel'].map(type => (
@@ -445,13 +586,13 @@
                                 <div className="space-y-2">
                                     <label className="flex justify-between items-end"><span className="text-sm font-bold text-slate-700">Current Odometer</span>{lastEntry ? <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md font-medium">Prev: {lastEntry.odometer}</span> : <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md font-medium">First Entry</span>}</label>
                                     <div className="relative">
-                                        <input type="number" inputMode="decimal" placeholder={lastEntry ? (Number(lastEntry.odometer) + 100).toString() : "e.g. 15000"} value={odometer} onChange={(e) => setOdometer(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-5 py-4 text-2xl font-bold outline-none transition-all" required />
+                                        <input type="number" inputMode="decimal" autoComplete="off" placeholder={lastEntry ? (Number(lastEntry.odometer) + 100).toString() : "e.g. 15000"} value={odometer} onChange={(e) => setOdometer(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-5 py-4 text-2xl font-bold outline-none transition-colors duration-200" required />
                                         {calculatedDist > 0 && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-right"><div className="text-xs text-slate-400 uppercase font-semibold">Driven</div><div className="text-lg font-bold text-green-600">+{calculatedDist} km</div></div>}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2"><label className="text-sm font-bold text-slate-700">Price / L</label><input type="number" inputMode="decimal" placeholder="100" value={pricePerLitre} onChange={(e) => setPricePerLitre(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-4 py-3 text-lg font-bold outline-none transition-all" required /></div>
-                                    <div className="space-y-2"><label className="text-sm font-bold text-slate-700">Total Cost</label><input type="number" inputMode="decimal" placeholder="500" value={cost} onChange={(e) => setCost(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-4 py-3 text-lg font-bold outline-none transition-all" required /></div>
+                                    <div className="space-y-2"><label className="text-sm font-bold text-slate-700">Price / L</label><input type="number" inputMode="decimal" autoComplete="off" placeholder="100" value={pricePerLitre} onChange={(e) => setPricePerLitre(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-4 py-3 text-lg font-bold outline-none transition-colors duration-200" required /></div>
+                                    <div className="space-y-2"><label className="text-sm font-bold text-slate-700">Total Cost</label><input type="number" inputMode="decimal" autoComplete="off" placeholder="500" value={cost} onChange={(e) => setCost(e.target.value)} className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500 rounded-2xl px-4 py-3 text-lg font-bold outline-none transition-colors duration-200" required /></div>
                                 </div>
                                 {(litres > 0) && <div className="bg-slate-800 rounded-2xl p-5 text-white shadow-lg"><div className="flex justify-between divide-x divide-white/20"><div className="pr-4 text-center flex-1"><p className="text-2xl font-bold">{mileage > 0 ? mileage : '--'}</p><p className="text-[10px] text-slate-400 uppercase mt-1">Mileage (km/L)</p></div><div className="pl-4 text-center flex-1"><p className="text-2xl font-bold">{litres}</p><p className="text-[10px] text-slate-400 uppercase mt-1">Litres Fuel</p></div></div></div>}
                             </div>
@@ -476,20 +617,20 @@
             </button>
         );
 
-        const StatCard = ({ icon, title, mileage, cost, color }) => (
+        const StatCard = React.memo(({ icon, title, mainValue, subValue, color }) => (
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 h-32 relative flex flex-col justify-between">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
                 <div>
                     <h3 className="text-slate-500 font-medium text-xs uppercase tracking-wide mb-1">{title}</h3>
                     <div className="flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold text-slate-900">{mileage !== null ? mileage : formatCurrency(cost)}</span>
-                        {mileage !== null && <span className="text-xs text-slate-400 font-medium">km/L</span>}
+                        <span className="text-2xl font-bold text-slate-900">{mainValue}</span>
+                        <span className="text-xs text-slate-400 font-medium">{subValue}</span>
                     </div>
                 </div>
             </div>
-        );
+        ));
 
-        const LogItem = ({ entry, onDelete, compact }) => {
+        const LogItem = React.memo(({ entry, onDelete, compact }) => {
             const mileage = (entry.distance && entry.distance > 0) ? (Number(entry.distance) / (Number(entry.cost) / Number(entry.pricePerLitre))).toFixed(1) : '0';
             const fuelLabel = entry.fuelType === 'Diesel' ? 'D' : 'P';
             const fuelColor = entry.fuelType === 'Diesel' ? 'bg-slate-800 text-white' : 'bg-orange-100 text-orange-600';
@@ -502,6 +643,7 @@
                             {entry.vehicle === 'car' && <div className={`absolute -bottom-1 -right-1 text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white ${fuelColor}`}>{fuelLabel}</div>}
                         </div>
                         <div>
+                            {entry.vehicleName && <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-0.5">{entry.vehicleName}</div>}
                             <div className="flex items-center gap-2"><span className="font-bold text-slate-900">{formatCurrency(entry.cost)}</span>{entry.distance > 0 && <span className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{entry.distance} km</span>}</div>
                             <div className="text-xs text-slate-400 mt-1 flex items-center gap-2"><span>{formatDate(entry.date)}</span><span>•</span><span>{entry.odometer || 'N/A'} Odo</span>{entry.distance > 0 && <><span>•</span><span className={mileage > 0 ? "text-indigo-600 font-semibold" : ""}>{mileage} km/L</span></>}</div>
                         </div>
@@ -509,7 +651,7 @@
                     <button onClick={(e) => {e.stopPropagation(); onDelete(entry.id);}} className="text-slate-300 hover:text-red-500 p-2"><Icons.Trash className="w-4 h-4" /></button>
                 </div>
             );
-        };
+        });
 
         const EmptyState = ({msg = "No logs yet"}) => (
             <div className="flex flex-col items-center justify-center py-12 text-center opacity-50"><div className="bg-slate-200 p-4 rounded-full mb-3"><Icons.Fuel className="w-8 h-8 text-slate-400"/></div><p className="text-slate-500 font-medium">{msg}</p></div>
